@@ -35,6 +35,8 @@ function createBoard() {
 }
 
 function renderPieces() {
+    chessboard.innerHTML = '';
+    createBoard();
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             const piece = initialBoard[i][j];
@@ -50,41 +52,55 @@ function renderPieces() {
 }
 
 function isWhitePiece(piece) {
+    if (!piece) return false;
     return piece === piece.toUpperCase();
+}
+
+function isPathClear(fromRow, fromCol, toRow, toCol) {
+    const dx = Math.sign(toCol - fromCol);
+    const dy = Math.sign(toRow - fromRow);
+    let x = fromCol + dx;
+    let y = fromRow + dy;
+
+    while (x !== toCol || y !== toRow) {
+        if (initialBoard[y][x]) {
+            return false;
+        }
+        x += dx;
+        y += dy;
+    }
+    return true;
 }
 
 function isValidMove(piece, fromRow, fromCol, toRow, toCol) {
     const pieceType = piece.toLowerCase();
     const dy = toRow - fromRow;
     const dx = toCol - fromCol;
+    const targetPiece = initialBoard[toRow][toCol];
 
-    if (fromRow === toRow && fromCol === toCol) return false;
+    if (targetPiece && isWhitePiece(piece) === isWhitePiece(targetPiece)) {
+        return false;
+    }
 
     switch (pieceType) {
         case 'p':
             const direction = isWhitePiece(piece) ? -1 : 1;
             const startRow = isWhitePiece(piece) ? 6 : 1;
-            // Standard one-square move
-            if (dx === 0 && dy === direction && !initialBoard[toRow][toCol]) {
-                return true;
-            }
-            // Two-square move from start
-            if (fromRow === startRow && dx === 0 && dy === 2 * direction && !initialBoard[toRow][toCol] && !initialBoard[fromRow + direction][fromCol]) {
-                return true;
-            }
-            // Capture
-            if (Math.abs(dx) === 1 && dy === direction && initialBoard[toRow][toCol]) {
-                return true;
-            }
+            if (dx === 0 && dy === direction && !targetPiece) return true;
+            if (fromRow === startRow && dx === 0 && dy === 2 * direction && !targetPiece && !initialBoard[fromRow + direction][fromCol]) return true;
+            if (Math.abs(dx) === 1 && dy === direction && targetPiece) return true;
             return false;
         case 'r':
-            return dx === 0 || dy === 0;
+            if (dx !== 0 && dy !== 0) return false;
+            return isPathClear(fromRow, fromCol, toRow, toCol);
         case 'n':
             return (Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1);
         case 'b':
-            return Math.abs(dx) === Math.abs(dy);
+            if (Math.abs(dx) !== Math.abs(dy)) return false;
+            return isPathClear(fromRow, fromCol, toRow, toCol);
         case 'q':
-            return Math.abs(dx) === Math.abs(dy) || dx === 0 || dy === 0;
+            if (Math.abs(dx) !== Math.abs(dy) && dx !== 0 && dy !== 0) return false;
+            return isPathClear(fromRow, fromCol, toRow, toCol);
         case 'k':
             return Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
     }
@@ -104,15 +120,9 @@ function handleSquareClick(event) {
         const piece = selectedPiece.dataset.piece;
 
         if (isValidMove(piece, fromRow, fromCol, row, col)) {
-            const targetPiece = square.querySelector('.piece');
-            if (targetPiece) {
-                square.removeChild(targetPiece);
-            }
-            square.appendChild(selectedPiece);
-
             initialBoard[row][col] = initialBoard[fromRow][fromCol];
             initialBoard[fromRow][fromCol] = '';
-
+            renderPieces();
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
         }
         selectedPiece.classList.remove('selected');
@@ -129,6 +139,5 @@ function handleSquareClick(event) {
     }
 }
 
-createBoard();
 renderPieces();
 chessboard.addEventListener('click', handleSquareClick);
