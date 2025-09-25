@@ -125,13 +125,17 @@ function handleSquareClick(event) {
             renderPieces();
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
         }
-        selectedPiece.classList.remove('selected');
+        
+        // Clear selection regardless of whether move was valid
+        document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
         selectedPiece = null;
     } else {
         const pieceElement = square.querySelector('.piece');
         if (pieceElement) {
             const piece = pieceElement.dataset.piece;
             if ((currentPlayer === 'white' && isWhitePiece(piece)) || (currentPlayer === 'black' && !isWhitePiece(piece))) {
+                // Clear any previous selections
+                document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
                 selectedPiece = pieceElement;
                 selectedPiece.classList.add('selected');
             }
